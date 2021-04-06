@@ -13,10 +13,14 @@ import multiprocessing
 
 # host = '192.168.16.7'
 #host = '192.168.43.161'
-host = '192.168.0.201'
-port = 3050
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect((host, port))
+try: 
+    host = '192.168.0.201'
+    port = 3050
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((host, port))
+except:
+    print("Fail to connect, verify if the server are running and the IP address")
+    exit()
 
 #initialize the python game
 pygame.init()
@@ -49,7 +53,7 @@ try:
 
     while True:
         
-        if(key == 115): # if the last character sent is s to stop the tank, send the @ to allow the use of joysitck
+        if(key == 120): # if the last character sent is x to stop the tank, send the @ to allow the use of joysitck
             key=64  # ASCII code for the @
         
         pygame.event.pump()
@@ -59,7 +63,7 @@ try:
             if event.type == pygame.KEYDOWN:
                 key = event.key
             if event.type == pygame.KEYUP:
-                key = 115  # ASCII code for the @. the character s to stop the tank
+                key = 120  # ASCII code for the @. the character s to stop the tank
             if event.type == pygame.MOUSEBUTTONDOWN:
                 print ("we got a mouse button down!")
         
@@ -73,7 +77,7 @@ try:
             data = bytearray(json.dumps("{\"LeftX\":" + "{:+1.4f}".format(joy.get_axis(0)) + ",\"LeftY\":" + "{:+1.4f}".format(joy.get_axis(1)) +  ",\"RightX\":" + "{:+1.4f}".format(joy.get_axis(3))+  ",\"RightY\":" + "{:+1.4f}".format(joy.get_axis(4))+ ",\"key\":\""+ chr(key)+ "\"}"),'utf-8')
         else:
             #we dont have a joystick. In this case, we just send zero
-            data = bytearray(json.dumps("{\"LeftX\":" + "0.0" + ",\"LeftY\":" + "0.0" +  ",\"RightX\":" + "0.0"+  ",\"RightY\":" + "0.0"+ ",\"key\":\""+ chr(key)+ "\"}"),'utf-8')
+            data = bytearray(json.dumps("{\"LeftX\":" + "0.0000" + ",\"LeftY\":" + "0.0000" +  ",\"RightX\":" + "0.0000"+  ",\"RightY\":" + "0.0000"+ ",\"key\":\""+ chr(key)+ "\"}"),'utf-8')
         
         #send the data to the tank 
         sock.sendall(data)
@@ -87,8 +91,12 @@ try:
 except KeyboardInterrupt:
     pass
       
-#finish the mplayer           
-p.kill()
+#finish the mplayer
+proc.terminate()
+time.sleep(.5)
+while (proc.poll()  != None):
+    proc.kill()
+    time.sleep(.5)
 
 #Exiting the program
 sys.exit(0)

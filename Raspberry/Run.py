@@ -133,7 +133,7 @@ try:		   # To handle the exceptions
             Robot.CCW()
         elif direct=='d':	#getting the clockwise trun commands from the ASCI keyboard word 'd'
             Robot.CW()
-        elif direct=='s':
+        elif direct=='x':
             Robot.stop()
 
 
@@ -181,6 +181,10 @@ print("Duty A " + str(dutyTilt))
 print("Duty B " + str(dutyPan))    
 pwmTilt.Stop()
 pwmPan.Stop()
-proc.kill()
+proc.terminate()
+time.sleep(.5)
+while (proc.poll()  != None)
+    proc.kill()
+    
 Robot.ShutDown()
 
