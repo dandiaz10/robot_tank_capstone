@@ -1,7 +1,7 @@
- # File Name          : servoCamera.py
-  # Description        : Movement of the camera on the servo-mount and video streaming  
-  # Author:            : Group F
-  # Date:              : 2019-05-28				 
+ # File Name         : RunRaspberry.py
+  # Description      : Control the tank movement and camera position
+  # Author:            : Eduardo, Lean, Daniela
+  # Date:               : 2021-04-06				 
 
 #Import libraries 
 
@@ -19,10 +19,6 @@ import json
 import socket
 from ast import literal_eval
 from math import sqrt
-
-
-#import pydevd
-#pydevd.settrace("192.168.0.163", port=5678,suspend=True)
 
 
 def getch(timeout=None):
@@ -62,11 +58,15 @@ serverSocket.bind((ip, port))
 serverSocket.listen()
 
 
+#define the PWM values for the center position
 dutyTilt = 7.5 #tilt
 dutyPan = 6.2 #pan
 
 #camere servo frequency Hz
 Freq=50
+
+#JSON package length. It is a fixed value
+packageLength = 91
 
 #setup the PWM for the camera
 pwmTilt = Lib.PWM(0)
@@ -79,9 +79,11 @@ pwmTilt.Duty(dutyTilt)
 pwmPan.Duty(dutyPan)
 
 Robot = RobotTank.RobotTank()
-proc = subprocess.Popen('raspivid -a 12 -t 0 -fl -w 800 -h 600 -rot 180 -ih -fps 30 -l -o tcp://0.0.0.0:5000', shell=True)
-#proc = subprocess.Popen('raspivid -t 0 -stm -b 25000000 -fps 30 -w 800 -h 600 -fl -rot 180 -l -o tcp://0.0.0.0:5000', shell=True)
 
+#start the raspivid to stream the video
+proc = subprocess.Popen('raspivid -a 12 -t 0 -fl -w 800 -h 600 -rot 180 -ih -fps 30 -l -o tcp://0.0.0.0:5000', shell=True)
+
+#enable the server to receive the joystick and keyboard commands
 (clientConnection, clientAddress) = serverSocket.accept()
 
 
@@ -90,21 +92,39 @@ deltaTime=time.time()
 try:		   # To handle the exceptions
     while True:
         
+        #verify if the raspivid is running
         if (proc.poll()  != None):
+            #The raspivid will close when the connection ends or it can stop due to any error. In those cases, start if again
             proc = subprocess.Popen('raspivid -a 12 -t 0 -fl -w 800 -h 600 -rot 180 -ih -fps 30 -l -o tcp://0.0.0.0:5000', shell=True)
 
-        #receive the data from the client
-        data = clientConnection.recv(91)
+        #receive the JSON data from the client
+        data = clientConnection.recv(packageLength)
         
-        #verify if the package is not empty
-        if(data!=b''):
-            #retreive the information
-            msg=literal_eval(data.decode('utf8'))
-            msg=msg.replace('+','')
-            jmsg = json.loads(msg)
-        else:
-            #if the package is empty, get the next package
-            continue
+        
+        try:
+            #verify if the package is not empty
+            if(data!=b''):
+                #retreive the information
+                msg=literal_eval(data.decode('utf8'))
+                #the json python function does not recognize the + simbol, the I need to remove it here
+                msg=msg.replace('+','')
+                #parser the JSON package
+                jmsg = json.loads(msg)
+                
+            else:
+                #if the package is empty, get the next package
+                continue
+        except:
+                #the package has an error, thow it away
+                
+                print("JSON package error")
+                print(data)
+                #resync the package
+                while  clientConnection.recv(1) != b'}':
+                    pass
+                #thow away the last character
+                clientConnection.recv(1)
+                continue
         
         #get the pressed key
         direct = jmsg['key']
@@ -113,18 +133,18 @@ try:		   # To handle the exceptions
         if  direct=='q':
              break
     
-        #Control the caterpillar
+        #Control the caterpillar using the joystick
         move = -jmsg['LeftY']
         turn = jmsg['LeftX']               
         Robot.DutyV2((move+turn)*100 , (move - turn)*100)
         
            
-        #control the camera
+        #control the camera using the joystick
         dutyPan=dutyPan  -  jmsg['RightX']
         dutyTilt=dutyTilt + jmsg['RightY'] 
         
         #---------------------------------------------------------------------------------------------------------------------------------
-            
+         #Control the caterpillar using the keyboard    
         if direct=='s':	#getting the backward commands from the ASCI keyboard word 's'
             Robot.backward()
         if direct=='w':	#getting the forward commands from the ASCI keyboard word 'w'
@@ -137,7 +157,7 @@ try:		   # To handle the exceptions
             Robot.stop()
 
 
-        #Camera control
+        #Camera control using the keyboard   
         if direct=='i':
             dutyTilt=dutyTilt+0.1
         elif direct=='k':
@@ -153,7 +173,7 @@ try:		   # To handle the exceptions
             print("Duty A " + str(dutyTilt))    
             print("Duty B " + str(dutyPan))    
         
-        #define the PWM limits
+        #define the camera servo limits. This is import because if the servor goes beyond it limits if can get stucked or make a 180 degree rotation.
         if(dutyTilt < 5):
             dutyTilt = 5
         
@@ -166,7 +186,7 @@ try:		   # To handle the exceptions
         if(dutyPan > 11):
             dutyPan = 11
             
-            
+        #update the camera position    
         pwmTilt.Duty(dutyTilt)
         pwmPan.Duty(dutyPan)
         
@@ -176,13 +196,15 @@ try:		   # To handle the exceptions
 except KeyboardInterrupt:		#if any other ASCI character press it interrupts the command
     pass
     
-    
+serverSocket.close()    
 print("Duty A " + str(dutyTilt))    
 print("Duty B " + str(dutyPan))    
 pwmTilt.Stop()
 pwmPan.Stop()
 proc.terminate()
-
+time.sleep(1)
+if (proc.poll()  != None):
+    proc.kill()
     
 Robot.ShutDown()
 

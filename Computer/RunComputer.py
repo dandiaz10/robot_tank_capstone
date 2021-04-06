@@ -71,13 +71,19 @@ try:
         if (key <64):
             key=64 # Avoiding sending special characters. It can break the JSON package
         
+        remove invalid characters
+        if key >= 122:
+            key = 64
+        
         #verify if the joysitck is connected 
         if (joystickFlag ==1):        
             #we have a joystick connected
+            #It is very import that the package has always the same size. Therefore, it was included the axis + signal to guarantee the same size when the negative value is sent
+            
             data = bytearray(json.dumps("{\"LeftX\":" + "{:+1.4f}".format(joy.get_axis(0)) + ",\"LeftY\":" + "{:+1.4f}".format(joy.get_axis(1)) +  ",\"RightX\":" + "{:+1.4f}".format(joy.get_axis(3))+  ",\"RightY\":" + "{:+1.4f}".format(joy.get_axis(4))+ ",\"key\":\""+ chr(key)+ "\"}"),'utf-8')
         else:
-            #we dont have a joystick. In this case, we just send zero
-            data = bytearray(json.dumps("{\"LeftX\":" + "0.0000" + ",\"LeftY\":" + "0.0000" +  ",\"RightX\":" + "0.0000"+  ",\"RightY\":" + "0.0000"+ ",\"key\":\""+ chr(key)+ "\"}"),'utf-8')
+            #we dont have a joystick. In this case, we just send zeros
+            data = bytearray(json.dumps("{\"LeftX\":" + "+0.0000" + ",\"LeftY\":" + "+0.0000" +  ",\"RightX\":" + "+0.0000"+  ",\"RightY\":" + "+0.0000"+ ",\"key\":\""+ chr(key)+ "\"}"),'utf-8')
         
         #send the data to the tank 
         sock.sendall(data)
@@ -91,6 +97,7 @@ try:
 except KeyboardInterrupt:
     pass
       
+socket.close()
 #finish the mplayer
 proc.terminate()
 time.sleep(.5)
