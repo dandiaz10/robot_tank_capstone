@@ -29,6 +29,8 @@ try:
     joy = pygame.joystick.Joystick(0)
     joy.init()
     joystickFlag =1
+    if joy.get_name() == 'VirtualBox USB Tablet':
+        joystickFlag =0
 except:
     joystickFlag =0
 
