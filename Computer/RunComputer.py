@@ -71,7 +71,7 @@ try:
         if (key <64):
             key=64 # Avoiding sending special characters. It can break the JSON package
         
-        remove invalid characters
+        #remove invalid characters
         if key >= 122:
             key = 64
         
