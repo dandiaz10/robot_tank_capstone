@@ -16,8 +16,8 @@ import multiprocessing
 try: 
     host = '192.168.0.201'
     port = 3050
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect((host, port))
+    clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    clientSocket.connect((host, port))
 except:
     print("Fail to connect, verify if the server are running and the IP address")
     exit()
@@ -43,11 +43,12 @@ print ("Using %s renderer" % pygame.display.get_driver())
 #Pass pygame window id to mplayer player, so it can render its contents in python Game
 win_id = pygame.display.get_wm_info()['window']
 
-#player.set_xwindow(win_id)
-print(win_id)
-
 #to reduce the lantecy I am using fps here 2x the fps on the raspberry. I dont know why, but it only works fine when I did that
-p=subprocess.Popen("python3 cam.py - | mplayer -nocache -fps 60 -nosound -vc ffh264 -noidx -mc 0 -wid "+ str(win_id) +" -", shell=True,executable='/bin/bash')
+if os.name =="posix": #we are running in a linux machine
+    p=subprocess.Popen("python3 cam.py - | mplayer -nocache -fps 60 -nosound -vc ffh264 -noidx -mc 0 -wid "+ str(win_id) +" -", shell=True,executable='/bin/bash', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+else: #we are running on a windows machine
+    p=subprocess.Popen("python3 cam.py - | mplayer.exe -nocache -fps 60 -nosound -vc ffh264 -noidx -mc 0 -wid "+ str(win_id) +" -", shell=True,  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
 
 #using a character to infor tha none of key was pressed
 key=64 # ASCII code for the @
@@ -64,6 +65,8 @@ try:
                 break
             if event.type == pygame.KEYDOWN:
                 key = event.key
+                if ( (key> 64) and (key<122)):
+                    print ("we got the key %s button down!" % chr(key))
             if event.type == pygame.KEYUP:
                 key = 120  # ASCII code for the @. the character s to stop the tank
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -88,7 +91,7 @@ try:
             data = bytearray(json.dumps("{\"LeftX\":" + "+0.0000" + ",\"LeftY\":" + "+0.0000" +  ",\"RightX\":" + "+0.0000"+  ",\"RightY\":" + "+0.0000"+ ",\"key\":\""+ chr(key)+ "\"}"),'utf-8')
         
         #send the data to the tank 
-        sock.sendall(data)
+        clientSocket.sendall(data)
         
         #give a small time gap to avoid overload the tank with more command that it can process
         time.sleep(.1)
@@ -99,13 +102,14 @@ try:
 except KeyboardInterrupt:
     pass
       
-socket.close()
+clientSocket.sendall(data)
+clientSocket.sendall(data)
+
+clientSocket.close()    
+pygame.quit()
 #finish the mplayer
-proc.terminate()
+p.terminate()
 time.sleep(.5)
-while (proc.poll()  != None):
-    proc.kill()
-    time.sleep(.5)
 
 #Exiting the program
 sys.exit(0)

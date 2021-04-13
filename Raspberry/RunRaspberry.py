@@ -3,6 +3,7 @@
   # Author:            : Eduardo, Lean, Daniela
   # Date:               : 2021-04-06				 
 
+
 #Import libraries 
 
 import RPi.GPIO as gpio
@@ -11,14 +12,16 @@ import sys
 import termios
 import select
 import tty
-import PWM
+import Lib
 import RobotTank
 import subprocess
 import time
 import json
 import socket
+import os
 from ast import literal_eval
 from math import sqrt
+
 
 
 def getch(timeout=None):
@@ -55,7 +58,7 @@ port=3050
 serverSocket.bind((ip, port))
 
 # Make the server listen for incoming connections
-serverSocket.listen()
+serverSocket.listen(1)
 
 
 #define the PWM values for the center position
@@ -69,8 +72,8 @@ Freq=50
 packageLength = 91
 
 #setup the PWM for the camera
-pwmTilt = PWM.PWM(0)
-pwmPan = PWM.PWM(1)
+pwmTilt = Lib.PWM(0)
+pwmPan = Lib.PWM(1)
 
 pwmTilt.Start(Freq)
 pwmPan.Start(Freq)
@@ -144,7 +147,7 @@ try:		   # To handle the exceptions
         dutyTilt=dutyTilt + jmsg['RightY'] 
         
         #---------------------------------------------------------------------------------------------------------------------------------
-         #Control the caterpillar using the keyboard    
+         #Control the caterpillar using the keyboard             
         if direct=='s':	#getting the backward commands from the ASCI keyboard word 's'
             Robot.backward()
         if direct=='w':	#getting the forward commands from the ASCI keyboard word 'w'
@@ -166,10 +169,10 @@ try:		   # To handle the exceptions
             dutyPan=dutyPan+0.1
         elif direct=='l':
             dutyPan=dutyPan- 0.1
-        elif direct=='o':
+        elif direct=='o': #center position
             dutyTilt = 7.5 #tilt
             dutyPan = 6.2 #pan
-        elif direct=='p':
+        elif direct=='p':#print the actual pan and tilt values
             print("Duty A " + str(dutyTilt))    
             print("Duty B " + str(dutyPan))    
         
@@ -191,20 +194,20 @@ try:		   # To handle the exceptions
         pwmPan.Duty(dutyPan)
         
 
-            
 
 except KeyboardInterrupt:		#if any other ASCI character press it interrupts the command
     pass
     
 serverSocket.close()    
-print("Duty A " + str(dutyTilt))    
-print("Duty B " + str(dutyPan))    
 pwmTilt.Stop()
 pwmPan.Stop()
+Robot.ShutDown()
 proc.terminate()
-time.sleep(1)
-if (proc.poll()  != None):
+#os.system('kill -9 %s'%proc.pid)
+while (proc.poll()  != None):
+    time.sleep(.5)
     proc.kill()
     
-Robot.ShutDown()
+#Exiting the program
+sys.exit(0)
 
