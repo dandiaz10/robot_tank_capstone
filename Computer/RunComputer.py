@@ -45,9 +45,9 @@ win_id = pygame.display.get_wm_info()['window']
 
 #to reduce the lantecy I am using fps here 2x the fps on the raspberry. I dont know why, but it only works fine when I did that
 if os.name =="posix": #we are running in a linux machine
-    p=subprocess.Popen("python3 cam.py - | mplayer -nocache -fps 60 -nosound -vc ffh264 -noidx -mc 0 -wid "+ str(win_id) +" -", shell=True,executable='/bin/bash', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc=subprocess.Popen("python3 cam.py - | mplayer -nocache -fps 60 -nosound -vc ffh264 -noidx -mc 0 -wid "+ str(win_id) +" -", shell=True,executable='/bin/bash', stderr=subprocess.DEVNULL)
 else: #we are running on a windows machine
-    p=subprocess.Popen("python3 cam.py - | mplayer.exe -nocache -fps 60 -nosound -vc ffh264 -noidx -mc 0 -wid "+ str(win_id) +" -", shell=True,  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc=subprocess.Popen("python3 cam.py - | mplayer.exe -nocache -fps 60 -nosound -vc ffh264 -noidx -mc 0 -wid "+ str(win_id) +" -", shell=True,  stderr=subprocess.DEVNULL)
 
 
 #using a character to infor tha none of key was pressed
@@ -56,6 +56,10 @@ try:
 
     while True:
         
+        #verify if the mplayer
+        if (proc.poll()  != None):
+            print("Video process is dead")
+         
         if(key == 120): # if the last character sent is x to stop the tank, send the @ to allow the use of joysitck
             key=64  # ASCII code for the @
         
@@ -108,7 +112,7 @@ clientSocket.sendall(data)
 clientSocket.close()    
 pygame.quit()
 #finish the mplayer
-p.terminate()
+proc.terminate()
 time.sleep(.5)
 
 #Exiting the program
