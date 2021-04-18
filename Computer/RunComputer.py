@@ -8,18 +8,20 @@ import time
 import multiprocessing
 
 
-# Enable in Windows to use directx renderer instead of windib
-#os.environ["SDL_VIDEODRIVER"] = "directx"
 
-# host = '192.168.16.7'
-#host = '192.168.43.161'
+
+try:
+    host= sys.argv[1]
+except:
+    print("Please provide the raspberry IP address")
+    exit()
+
 try: 
-    host = '192.168.0.201'
     port = 3050
     clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     clientSocket.connect((host, port))
 except:
-    print("Fail to connect, verify if the server are running and the IP address")
+    print("Fail to connect, verify if the server is running and the IP address")
     exit()
 
 #initialize the python game
@@ -45,10 +47,11 @@ win_id = pygame.display.get_wm_info()['window']
 
 #to reduce the lantecy I am using fps here 2x the fps on the raspberry. I dont know why, but it only works fine when I did that
 if os.name =="posix": #we are running in a linux machine
-    proc=subprocess.Popen("python3 cam.py - | mplayer -nocache -fps 60 -nosound -vc ffh264 -noidx -mc 0 -wid "+ str(win_id) +" -", shell=True,executable='/bin/bash', stderr=subprocess.DEVNULL)
+    p=subprocess.Popen("python3 cam.py  " + host +" - | mplayer -nocache -fps 60 -nosound -vc ffh264 -noidx -mc 0 -wid "+ str(win_id) +" -", shell=True,executable='/bin/bash', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 else: #we are running on a windows machine
-    proc=subprocess.Popen("python3 cam.py - | mplayer.exe -nocache -fps 60 -nosound -vc ffh264 -noidx -mc 0 -wid "+ str(win_id) +" -", shell=True,  stderr=subprocess.DEVNULL)
-
+    p=subprocess.Popen("python3 cam.py " + host +"- | mplayer.exe -nocache -fps 60 -nosound -vc ffh264 -noidx -mc 0 -wid "+ str(win_id) +" -", shell=True,  stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #Enable in Windows to use directx renderer instead of windib
+    #os.environ["SDL_VIDEODRIVER"] = "directx"
 
 #using a character to infor tha none of key was pressed
 key=64 # ASCII code for the @
@@ -56,10 +59,6 @@ try:
 
     while True:
         
-        #verify if the mplayer
-        if (proc.poll()  != None):
-            print("Video process is dead")
-         
         if(key == 120): # if the last character sent is x to stop the tank, send the @ to allow the use of joysitck
             key=64  # ASCII code for the @
         
@@ -112,7 +111,7 @@ clientSocket.sendall(data)
 clientSocket.close()    
 pygame.quit()
 #finish the mplayer
-proc.terminate()
+p.terminate()
 time.sleep(.5)
 
 #Exiting the program
