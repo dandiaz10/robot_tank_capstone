@@ -133,8 +133,8 @@ try:		   # To handle the exceptions
         direct = jmsg['key']
         
         #exit the program        
-        if  direct=='q':
-             break
+        #if  direct=='q':
+             #break
     
         #Control the caterpillar using the joystick
         move = -jmsg['LeftY']
