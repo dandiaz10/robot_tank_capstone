@@ -23,30 +23,6 @@ from ast import literal_eval
 from math import sqrt
 
 
-
-def getch(timeout=None):
-    """Return a single char from console input.
-    The optional timeout argument specifies a time-out as a floating point
-    number in seconds. When the timeout argument is omitted or None (the
-    default) the function blocks until a char has been read. If the timeout is
-    exceeded before a char can be read, the function returns None. A time-out
-    value of zero specifies a poll and never blocks.
-    """
-    fd = sys.stdin.fileno()
-    old = termios.tcgetattr(fd)
-
-    try:
-        tty.setcbreak(fd)
-
-        rlist, _, _ = select.select([fd], [], [], timeout)
-        if fd in rlist:
-            return sys.stdin.read(1)
-
-        return None
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old)
-
-
 #do some cleanup to avoid errors
 subprocess.call('pkill raspivid', shell=True)
 
@@ -84,7 +60,7 @@ pwmPan.Duty(dutyPan)
 Robot = RobotTank.RobotTank()
 
 #start the raspivid to stream the video
-proc = subprocess.Popen('raspivid -a 12 -t 0 -fl -w 800 -h 600 -rot 180 -ih -fps 30 -l -o tcp://0.0.0.0:5000', shell=True)
+proc = subprocess.Popen('raspivid -a 12 -t 0 -fl -w 800 -h 600 -rot 180 -ih -fps 15 -l -o tcp://0.0.0.0:5000', shell=True)
 
 #enable the server to receive the joystick and keyboard commands
 (clientConnection, clientAddress) = serverSocket.accept()
@@ -98,9 +74,10 @@ try:		   # To handle the exceptions
         #verify if the raspivid is running
         if (proc.poll()  != None):
             #The raspivid will close when the connection ends or it can stop due to any error. In those cases, start if again
-            proc = subprocess.Popen('raspivid -a 12 -t 0 -fl -w 800 -h 600 -rot 180 -ih -fps 30 -l -o tcp://0.0.0.0:5000', shell=True)
+            proc = subprocess.Popen('raspivid -a 12 -t 0 -fl -w 800 -h 600 -rot 180 -ih -fps 15 -l -o tcp://0.0.0.0:5000', shell=True)
 
         #receive the JSON data from the client
+        clientConnection.settimeout(1.0)
         data = clientConnection.recv(packageLength)
         
         
@@ -115,7 +92,9 @@ try:		   # To handle the exceptions
                 jmsg = json.loads(msg)
                 
             else:
-                #if the package is empty, get the next package
+                #if the package is empty, something went wrong 
+                Robot.stop()
+                #get the next package
                 continue
         except:
                 #the package has an error, thow it away

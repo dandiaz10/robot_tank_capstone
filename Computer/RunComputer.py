@@ -7,9 +7,6 @@ import json
 import time
 import multiprocessing
 
-
-
-
 try:
     host= sys.argv[1]
 except:
@@ -116,7 +113,10 @@ clientSocket.close()
 pygame.quit()
 #finish the mplayer
 proc.terminate()
-time.sleep(.5)
+time.sleep(2)
+
+#do some cleanup before leave
+subprocess.call('pkill mplayer', shell=True)
 
 #Exiting the program
 sys.exit(0)
