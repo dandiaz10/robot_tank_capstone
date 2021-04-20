@@ -12,7 +12,7 @@ import sys
 import termios
 import select
 import tty
-import Lib
+import PWM
 import RobotTank
 import subprocess
 import time
@@ -48,8 +48,8 @@ Freq=50
 packageLength = 91
 
 #setup the PWM for the camera
-pwmTilt = Lib.PWM(0)
-pwmPan = Lib.PWM(1)
+pwmTilt = PWM.PWM(0)
+pwmPan = PWM.PWM(1)
 
 pwmTilt.Start(Freq)
 pwmPan.Start(Freq)
