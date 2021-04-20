@@ -73,7 +73,7 @@ try:		   # To handle the exceptions
         
         #verify if the raspivid is running
         if (proc.poll()  != None):
-            #The raspivid will close when the connection ends or it can stop due to any error. In those cases, start if again
+            #The raspivid will close when the connection ends or it can stop due to any error. In those cases, start it again
             proc = subprocess.Popen('raspivid -a 12 -t 0 -fl -w 800 -h 600 -rot 180 -ih -fps 15 -l -o tcp://0.0.0.0:5000', shell=True)
 
         #receive the JSON data from the client
@@ -155,7 +155,7 @@ try:		   # To handle the exceptions
             print("Duty A " + str(dutyTilt))    
             print("Duty B " + str(dutyPan))    
         
-        #define the camera servo limits. This is import because if the servor goes beyond it limits if can get stucked or make a 180 degree rotation.
+        #define the camera servo limits. This is import because if the servor goes beyond its limits, it can get stucked or make a 180 degree rotation.
         if(dutyTilt < 5):
             dutyTilt = 5
         
@@ -174,7 +174,7 @@ try:		   # To handle the exceptions
         
 
 
-except KeyboardInterrupt:		#if any other ASCI character press it interrupts the command
+except KeyboardInterrupt:
     pass
     
 serverSocket.close()    
