@@ -1,3 +1,4 @@
+
 import socket
 import sys
 
@@ -8,9 +9,6 @@ except:
     print("Please provide the raspberry IP address")
     exit()
 
-# TCP_IP = '192.168.16.7'
-#TCP_IP = '192.168.43.161'
-# TCP_IP = '192.168.0.201'
 TCP_PORT = 5000
 BUFFER_SIZE = 2056
 
